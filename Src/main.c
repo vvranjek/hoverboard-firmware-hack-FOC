@@ -170,6 +170,34 @@ static uint16_t rate = RATE; // Adjustable rate to support multiple drive modes 
 #endif
 
 
+void set_output(int16_t cmdl, int16_t cmdr)
+{
+  // ####### SET OUTPUTS #######
+
+  #ifdef INVERT_R_DIRECTION
+  cmdr = -cmdr;
+  #endif
+  #ifdef INVERT_L_DIRECTION
+  cmdl = -cmdl;
+  #endif
+
+#ifdef REVERSE_SWITCH
+  if (input1[inIdx].raw > input1[inIdx].mid + input1[inIdx].dband) {
+      //printf("REVERSE\n");
+      cmdr = -cmdr;
+      cmdl = -cmdl;
+  }
+#endif
+
+
+
+
+    pwmr = cmdr;
+
+    pwml = cmdl;
+}
+
+
 int main(void) {
 
   HAL_Init();
@@ -351,18 +379,11 @@ int main(void) {
       #endif
 
 
-      // ####### SET OUTPUTS (if the target change is less than +/- 100) #######
-      #ifdef INVERT_R_DIRECTION
-        pwmr = cmdR;
-      #else
-        pwmr = -cmdR;
-      #endif
-      #ifdef INVERT_L_DIRECTION
-        pwml = -cmdL;
-      #else
-        pwml = cmdL;
-      #endif
+       set_output(cmdL, cmdR);
+
     #endif
+
+
 
     #ifdef VARIANT_TRANSPOTTER
       distance    = CLAMP(input1[inIdx].cmd - 180, 0, 4095);
@@ -502,7 +523,9 @@ int main(void) {
             batVoltageCalib,          // 6: for verifying battery voltage calibration
             board_temp_adcFilt,       // 7: for board temperature calibration
             board_temp_deg_c);        // 8: for verifying board temperature calibration
-        #endif
+
+          printf("Speed: %i,  Steer: %i\n", speed, steer);
+#endif
       }
     #endif
 
