@@ -944,7 +944,7 @@ void handleTimeout(void) {
     #ifdef CONTROL_ADC
     if (inIdx == CONTROL_ADC) {
       // If input1 or Input2 is either below MIN - Threshold or above MAX + Threshold, ADC protection timeout
-      if (IN_RANGE(input1[inIdx].raw, input1[inIdx].min - ADC_PROTECT_THRESH, input1[inIdx].max + ADC_PROTECT_THRESH) &&
+      if (IN_RANGE(input1[inIdx].raw, CLAMP(input1[inIdx].min - ADC_PROTECT_THRESH, 0, 4095), CLAMP(input1[inIdx].max + ADC_PROTECT_THRESH, 0, 4095)) &&
           IN_RANGE(input2[inIdx].raw, input2[inIdx].min - ADC_PROTECT_THRESH, input2[inIdx].max + ADC_PROTECT_THRESH)) {
           timeoutFlgADC = 0;                            // Reset the timeout flag
           timeoutCntADC = 0;                            // Reset the timeout counter

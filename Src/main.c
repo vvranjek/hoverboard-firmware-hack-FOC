@@ -248,6 +248,9 @@ int main(void) {
     }
   #endif
 
+    // Clear BDTR 0-7
+    LEFT_TIM->BDTR &= ~TIM_BDTR_DTG;
+
   while(1) {
     if (buzzerTimer - buzzerTimer_prev > 16*DELAY_IN_MAIN_LOOP) {   // 1 ms = 16 ticks buzzerTimer
 
@@ -363,6 +366,38 @@ int main(void) {
         pwml = cmdL;
       #endif
     #endif
+
+        if (0 && abs(input2[inIdx].cmd) < 10) { // Throttle release
+          //bdtr = hwBrake(input1[inIdx].cmd);
+          //bdtr = 127; // TODO: fix this, should work with return from line above
+
+        }
+        else { // slowly raise bdtr to prevent shock
+  //          if (main_loop_counter % 5 == 0 && bdtr > 0) {
+  //              beepCount(1, 32, 1);
+
+  //              bdtr--;
+  //          }
+            LEFT_TIM->BDTR &= ~TIM_BDTR_DTG;
+
+            uint8_t bdtr = MAP(CLAMP(abs(input2[inIdx].cmd), 0, 500), 0, 500, 0, 255 );
+
+
+            //BIT_CLEAR(LEFT_TIM->BDTR, TIM_BDTR_BKE);
+            //BIT_SET(LEFT_TIM->BDTR, TIM_BDTR_BKE);
+
+            LEFT_TIM->BDTR &= ~TIM_BDTR_DTG;
+            REGISTER_WRITE(LEFT_TIM->BDTR,TIM_BDTR_DTG_Pos, bdtr );
+
+
+
+
+            //RIGHT_TIM->BDTR &= ~TIM_BDTR_DTG;
+            //RIGHT_TIM->BDTR |= (bdtr<<TIM_BDTR_DTG);
+        }
+
+
+
 
     #ifdef VARIANT_TRANSPOTTER
       distance    = CLAMP(input1[inIdx].cmd - 180, 0, 4095);
