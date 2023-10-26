@@ -307,25 +307,22 @@ int main(void) {
 
       static uint8_t bdtr;
 
-      if (0 && abs(input2[inIdx].cmd) < 10) { // Throttle release
-        //bdtr = hwBrake(input1[inIdx].cmd);
-        //bdtr = 127; // TODO: fix this, should work with return from line above
+      if (abs(input2[inIdx].cmd) < 10) { // Throttle release
+        bdtr = hwBrake(input1[inIdx].cmd);
 
       }
       else { // slowly raise bdtr to prevent shock
-//          if (main_loop_counter % 5 == 0 && bdtr > 0) {
-//              beepCount(1, 32, 1);
+          if (main_loop_counter % 2 == 0 && bdtr > 0) {
+              bdtr--;
+          }
 
-//              bdtr--;
-//          }
+          //bdtr = MAP(CLAMP(abs(input1[inIdx].cmd), 0, 1000), 0, 1000, 0, 255 );
 
-          bdtr = MAP(CLAMP(abs(input1[inIdx].cmd), 0, 1000), 0, 1000, 0, 255 );
+          LEFT_TIM->BDTR &= ~TIM_BDTR_DTG;
+          REGISTER_WRITE(LEFT_TIM->BDTR,TIM_BDTR_DTG_Pos, bdtr );
 
-          //LEFT_TIM->BDTR &= ~TIM_BDTR_DTG;
-          LEFT_TIM->BDTR |= (bdtr<<TIM_BDTR_DTG);
-
-          //RIGHT_TIM->BDTR &= ~TIM_BDTR_DTG;
-          RIGHT_TIM->BDTR |= (bdtr<<TIM_BDTR_DTG);
+          RIGHT_TIM->BDTR &= ~TIM_BDTR_DTG;
+          REGISTER_WRITE(RIGHT_TIM->BDTR,TIM_BDTR_DTG_Pos, bdtr );
       }
       #endif
 
