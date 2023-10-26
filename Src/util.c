@@ -692,17 +692,17 @@ void standstillHold(void) {
 
 uint8_t hwBrake(int16_t cmd) {
 
-    uint8_t bdtr = MAP(CLAMP(abs(cmd), 0, 1000), 0, 1000, 127, 0 );
+    uint8_t bdtr = MAP(CLAMP(abs(cmd), 0, 1000), 0, 1000, 255, 0 );
 
     //
 
-    //LEFT_TIM->BDTR &= ~TIM_BDTR_DTG;
-    LEFT_TIM->BDTR|=(bdtr<<TIM_BDTR_DTG_0);
+    LEFT_TIM->BDTR &= ~TIM_BDTR_DTG;
+    REGISTER_WRITE(LEFT_TIM->BDTR,TIM_BDTR_DTG_Pos, bdtr );
 
-    //RIGHT_TIM->BDTR &= ~TIM_BDTR_DTG;
-    RIGHT_TIM->BDTR|=(bdtr<<TIM_BDTR_DTG_0);
+    RIGHT_TIM->BDTR &= ~TIM_BDTR_DTG;
+    REGISTER_WRITE(RIGHT_TIM->BDTR,TIM_BDTR_DTG_Pos, bdtr );
 
-    return cmd;
+    return bdtr;
 
 }
 
