@@ -279,12 +279,12 @@ int main(void) {
 
       #if defined(VARIANT_HOVERCAR) || defined(VARIANT_CAR)
       if (inIdx == CONTROL_ADC) {                                   // Only use use implementation below if pedals are in use (ADC input)
-        if (speedAvgAbs < 60) {                                     // Check if Hovercar is physically close to standstill to enable Double tap detection on Brake pedal for Reverse functionality
+        if (speedAvgAbs < 20 && (input2[inIdx].cmd < 10) ) {                                     // Check if Hovercar is physically close to standstill to enable Double tap detection on Brake pedal for Reverse functionality
           multipleTapDet(input1[inIdx].cmd, HAL_GetTick(), &MultipleTapBrake); // Brake pedal in this case is "input1" variable
         }
 
-        if (input1[inIdx].cmd > 30) {                               // If Brake pedal (input1) is pressed, bring to 0 also the Throttle pedal (input2) to avoid "Double pedal" driving
-          input2[inIdx].cmd = (int16_t)((input2[inIdx].cmd * speedBlend) >> 15);
+        if (input1[inIdx].cmd > 100) {                               // If Brake pedal (input1) is pressed, bring to 0 also the Throttle pedal (input2) to avoid "Double pedal" driving
+          //input2[inIdx].cmd = 0;
           cruiseControl((uint8_t)rtP_Left.b_cruiseCtrlEna);         // Cruise control deactivated by Brake pedal if it was active
         }
       }
@@ -292,9 +292,41 @@ int main(void) {
 
       #ifdef HW_BRAKE_ENABLE
 
-      hwBrake(MAP(CLAMP(abs(input1[inIdx].cmd), 0, 1000), 0, 1000, 255, 150 ));
 
+      // TIM_BDTR_DTG_Pos = 0
+      // TIM_BDTR_DTG_Msk = 255
+      // TIM_BDTR_DTG = 255
+      // TIM_BDTR_DTG_0 = 1
+      // TIM_BDTR_DTG_1 = 2
+      // TIM_BDTR_DTG_2 = 4
+      // TIM_BDTR_DTG_3 = 8
+      // TIM_BDTR_DTG_4 = 16
+      // TIM_BDTR_DTG_5 = 32
+      // TIM_BDTR_DTG_6 = 64
+      // TIM_BDTR_DTG_7 = 128
 
+      static uint8_t bdtr;
+
+      if (0 && abs(input2[inIdx].cmd) < 10) { // Throttle release
+        //bdtr = hwBrake(input1[inIdx].cmd);
+        //bdtr = 127; // TODO: fix this, should work with return from line above
+
+      }
+      else { // slowly raise bdtr to prevent shock
+//          if (main_loop_counter % 5 == 0 && bdtr > 0) {
+//              beepCount(1, 32, 1);
+
+//              bdtr--;
+//          }
+
+          bdtr = MAP(CLAMP(abs(input1[inIdx].cmd), 0, 1000), 0, 1000, 0, 255 );
+
+          //LEFT_TIM->BDTR &= ~TIM_BDTR_DTG;
+          LEFT_TIM->BDTR |= (bdtr<<TIM_BDTR_DTG);
+
+          //RIGHT_TIM->BDTR &= ~TIM_BDTR_DTG;
+          RIGHT_TIM->BDTR |= (bdtr<<TIM_BDTR_DTG);
+      }
       #endif
 
 
@@ -305,7 +337,7 @@ int main(void) {
 
       #if defined(VARIANT_HOVERCAR) || defined(VARIANT_CAR)
       if (inIdx == CONTROL_ADC) {                                   // Only use use implementation below if pedals are in use (ADC input)
-        if (speedAvg > 0) {                                         // Make sure the Brake pedal is opposite to the direction of motion AND it goes to 0 as we reach standstill (to avoid Reverse driving by Brake pedal) 
+        if (speedAvg > 0) {                                         // Make sure the Brake pedal is opposite to the direction of motion AND it goes to 0 as we reach standstill (to avoid Reverse driving by Brake pedal)
           input1[inIdx].cmd = (int16_t)((-input1[inIdx].cmd * speedBlend) >> 15);
         } else {
           input1[inIdx].cmd = (int16_t)(( input1[inIdx].cmd * speedBlend) >> 15);

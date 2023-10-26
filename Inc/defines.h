@@ -210,6 +210,11 @@
 #define MAX3(a, b, c) MAX(a, MAX(b, c))
 #define ARRAY_LEN(x) (uint32_t)(sizeof(x) / sizeof(*(x)))
 #define MAP(x, in_min, in_max, out_min, out_max) (((((x) - (in_min)) * ((out_max) - (out_min))) / ((in_max) - (in_min))) + (out_min))
+#define BIT_SET(n, k) ((n) |= (1<<(k-1)))   //set function
+#define BIT_CLEAR(n, k) ((n) &= ~(1<<(k-1))) //clear function
+#define BIT_TOGGLE(n, k) ((n) ^= (1<<(k-1))) //toggle function
+#define REGISTER_WRITE(reg, pos, val) (reg |= (val<<pos))
+
 
 #if defined(PRINTF_FLOAT_SUPPORT) && (defined(DEBUG_SERIAL_USART2) || defined(DEBUG_SERIAL_USART3)) && defined(__GNUC__)
     asm(".global _printf_float");     // this is the magic trick for printf to support float. Warning: It will increase code considerably! Better to avoid!
