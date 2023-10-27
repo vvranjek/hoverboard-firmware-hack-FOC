@@ -352,6 +352,10 @@ int main(void) {
         }
       #endif
 
+      // Exponential command
+      input1[inIdx].cmd = input1[inIdx].cmd*abs(input1[inIdx].cmd)/1000;
+      input2[inIdx].cmd = input2[inIdx].cmd*abs(input2[inIdx].cmd)/1000;
+
       // ####### LOW-PASS FILTER #######
       rateLimiter16(input1[inIdx].cmd, rate, &steerRateFixdt);
       rateLimiter16(input2[inIdx].cmd, rate, &speedRateFixdt);
