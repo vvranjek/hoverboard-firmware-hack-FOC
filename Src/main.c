@@ -312,7 +312,7 @@ int main(void) {
 
       }
       else { // slowly raise bdtr to prevent shock
-          if (main_loop_counter % 2 == 0 && bdtr > 0) {
+          if (main_loop_counter % 2 == 0 && bdtr > DEAD_TIME) {
               bdtr--;
           }
 
