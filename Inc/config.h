@@ -20,13 +20,14 @@
   //#define VARIANT_HOVERBOARD  // Variant for HOVERBOARD build
   //#define VARIANT_TRANSPOTTER // Variant for TRANSPOTTER build https://github.com/NiklasFauth/hoverboard-firmware-hack/wiki/Build-Instruction:-TranspOtter https://hackaday.io/project/161891-transpotter-ng
   //#define VARIANT_SKATEBOARD  // Variant for SKATEBOARD build
+  //#define VARIANT_CAR
 #endif
 // ########################### END OF VARIANT SELECTION ############################
 
 
 // ############################### DO-NOT-TOUCH SETTINGS ###############################
 #define PWM_FREQ            16000     // PWM frequency in Hz / is also used for buzzer
-#define DEAD_TIME              48     // PWM deadtime
+#define DEAD_TIME              0      // PWM deadtime
 #ifdef VARIANT_TRANSPOTTER
   #define DELAY_IN_MAIN_LOOP    2
 #else
@@ -149,7 +150,7 @@
 // Control selections
 #define CTRL_TYP_SEL    SIN_CTRL        // [-] Control type selection: COM_CTRL, SIN_CTRL, FOC_CTRL (default)
 #define CTRL_MOD_REQ    VLT_MODE        // [-] Control mode request: OPEN_MODE, VLT_MODE (default), SPD_MODE, TRQ_MODE. Note: SPD_MODE and TRQ_MODE are only available for CTRL_FOC!
-#define DIAG_ENA        1               // [-] Motor Diagnostics enable flag: 0 = Disabled, 1 = Enabled (default)
+#define DIAG_ENA        0               // [-] Motor Diagnostics enable flag: 0 = Disabled, 1 = Enabled (default)
 
 // Limitation settings
 #define I_MOT_MAX       15              // [A] Maximum single motor current limit
@@ -238,7 +239,7 @@
  * DEBUG ASCII output is:
  * // "in1:345 in2:1337 cmdL:0 cmdR:0 BatADC:0 BatV:0 TempADC:0 Temp:0\r\n"
  *
- * in1:     (int16_t)input1[inIdx].raw); BEEP                                       raw input1: ADC1, UART, PWM, PPM, iBUS
+ * in1:     (int16_t)input1[inIdx].raw);                                        raw input1: ADC1, UART, PWM, PPM, iBUS
  * in2:     (int16_t)input2[inIdx].raw);                                        raw input2: ADC2, UART, PWM, PPM, iBUS
  * cmdL:    (int16_t)cmdL);                                                     output command Left: [-1000, 1000]
  * cmdR:    (int16_t)cmdR);                                                     output command Right: [-1000, 1000]
@@ -261,6 +262,55 @@
 // ########################### END OF DEBUG LCD ############################
 
 
+#ifdef VARIANT_CAR
+    #define FLASH_WRITE_KEY         0x1107  // Flash memory writing key. Change this key to ignore the input calibrations from the flash memory and use the ones in config.h
+    #undef  CTRL_MOD_REQ
+    #define CTRL_MOD_REQ            VLT_MODE  // HOVERCAR works best in TORQUE Mode. VOLTAGE mode is preffered when freewheeling is not desired when throttle is released.
+    #define CONTROL_ADC             0         // use ADC as input. Number indicates priority for dual-input. Disable CONTROL_SERIAL_USART2, FEEDBACK_SERIAL_USART2, DEBUG_SERIAL_USART2!
+
+    #define STEER_COEFFICIENT       0
+    #define PRI_INPUT1            2, 0, 1900, 4000, 100      // TYPE, MIN, MID, MAX, DEADBAND. See INPUT FORMAT section
+    #define PRI_INPUT2            2, 0, 2000, 4000, 100      // TYPE, MIN, MID, MAX, DEADBAND. See INPUT FORMAT section
+ 
+
+    #define SPEED_COEFFICIENT       16384     // 1.0f
+
+    // #define ADC_ALTERNATE_CONNECT             // use to swap ADC inputs
+     #define INVERT_R_DIRECTION                // Invert rotation of right motor
+     #define INVERT_L_DIRECTION                // Invert rotation of left motor
+     #define DEBUG_SERIAL_USART3               // right sensor board cable, disable if I2C (nunchuk or lcd) is used!
+
+    // Extra functionality
+    // #define CRUISE_CONTROL_SUPPORT            // [-] Flag to enable Cruise Control support. Activation/Deactivation is done by sideboard button or Brake pedal press.
+    // #define STANDSTILL_HOLD_ENABLE            // [-] Flag to hold the position when standtill is reached. Only available and makes sense for VOLTAGE or TORQUE mode.
+    // #define ELECTRIC_BRAKE_ENABLE             // [-] Flag to enable electric brake and replace the motor "freewheel" with a constant braking when the input torque request is 0. Only available and makes sense for TORQUE mode.
+       #define HW_BRAKE_ENABLE
+       #define ELECTRIC_BRAKE_MAX    255         // (0, 500) Maximum electric brake to be applied when input torque request is 0 (pedal fully released).
+       #define ELECTRIC_BRAKE_THRES  120         // (0, 500) Threshold below at which the electric brake starts engaging.
+
+
+    //#define MULTI_MODE_DRIVE                  // This option enables the selection of 3 driving modes at start-up using combinations of Brake and Throttle pedals (see below)
+    #ifdef MULTI_MODE_DRIVE
+        // BEGINNER MODE:     Power ON + Brake [released] + Throttle [released or pressed]
+        #define MULTI_MODE_DRIVE_M1_MAX   175
+        #define MULTI_MODE_DRIVE_M1_RATE  250
+        #define MULTI_MODE_M1_I_MOT_MAX   4
+        #define MULTI_MODE_M1_N_MOT_MAX   30
+
+        // INTERMEDIATE MODE: Power ON + Brake [pressed] + Throttle [released]
+        #define MULTI_MODE_DRIVE_M2_MAX   500
+        #define MULTI_MODE_DRIVE_M2_RATE  300
+        #define MULTI_MODE_M2_I_MOT_MAX   8
+        #define MULTI_MODE_M2_N_MOT_MAX   80
+
+        // ADVANCED MODE:    Power ON + Brake [pressed] + Throttle [pressed]
+        #define MULTI_MODE_DRIVE_M3_MAX   1000
+        #define MULTI_MODE_DRIVE_M3_RATE  450
+        #define MULTI_MODE_M3_I_MOT_MAX   I_MOT_MAX
+        #define MULTI_MODE_M3_N_MOT_MAX   N_MOT_MAX
+    #endif
+
+#endif
 
 // ################################# VARIANT_ADC SETTINGS ############################
 #ifdef VARIANT_ADC
@@ -284,9 +334,6 @@
  * - for middle resting potis: Let the potis in the middle resting position, write value in1 to PRI_INPUT1 MID and value in2 to PRI_INPUT2 MID
 */
   #define CONTROL_ADC           0         // use ADC as input. Number indicates priority for dual-input. Disable CONTROL_SERIAL_USART2, FEEDBACK_SERIAL_USART2, DEBUG_SERIAL_USART2!
-
-  #define STEER_COEFFICIENT 0
-//#define SPEED_COEFFICIENT 0
 
   // #define DUAL_INPUTS                     //  ADC*(Primary) + UART(Auxiliary). Uncomment this to use Dual-inputs
   #define PRI_INPUT1            2, 0, 1900, 4000, 100      // TYPE, MIN, MID, MAX, DEADBAND. See INPUT FORMAT section
@@ -684,7 +731,7 @@
 
 // ############################### VALIDATE SETTINGS ###############################
 #if !defined(VARIANT_ADC) && !defined(VARIANT_USART) && !defined(VARIANT_NUNCHUK) && !defined(VARIANT_PPM) && !defined(VARIANT_PWM) && \
-    !defined(VARIANT_IBUS) && !defined(VARIANT_HOVERCAR) && !defined(VARIANT_HOVERBOARD) && !defined(VARIANT_TRANSPOTTER) && !defined(VARIANT_SKATEBOARD)
+    !defined(VARIANT_IBUS) && !defined(VARIANT_HOVERCAR) && !defined(VARIANT_HOVERBOARD) && !defined(VARIANT_TRANSPOTTER) && !defined(VARIANT_SKATEBOARD) && !defined(VARIANT_CAR)
   #error Variant not defined! Please check platformio.ini or Inc/config.h for available variants.
 #endif
 

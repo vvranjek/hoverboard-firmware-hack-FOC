@@ -690,6 +690,22 @@ void standstillHold(void) {
   #endif
 }
 
+uint8_t hwBrake(int16_t cmd) {
+
+    uint8_t bdtr = MAP(CLAMP(abs(cmd), 0, 1000), 0, 1000, 255, 0 );
+
+    //
+
+    LEFT_TIM->BDTR &= ~TIM_BDTR_DTG;
+    REGISTER_WRITE(LEFT_TIM->BDTR,TIM_BDTR_DTG_Pos, bdtr );
+
+    RIGHT_TIM->BDTR &= ~TIM_BDTR_DTG;
+    REGISTER_WRITE(RIGHT_TIM->BDTR,TIM_BDTR_DTG_Pos, bdtr );
+
+    return bdtr;
+
+}
+
  /*
  * Electric Brake Function
  * In case of TORQUE mode, this function replaces the motor "freewheel" with a constant braking when the input torque request is 0.

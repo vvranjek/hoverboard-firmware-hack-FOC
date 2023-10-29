@@ -248,9 +248,6 @@ int main(void) {
     }
   #endif
 
-    // Clear BDTR 0-7
-    LEFT_TIM->BDTR &= ~TIM_BDTR_DTG;
-
   while(1) {
     if (buzzerTimer - buzzerTimer_prev > 16*DELAY_IN_MAIN_LOOP) {   // 1 ms = 16 ticks buzzerTimer
 
@@ -271,7 +268,7 @@ int main(void) {
       }
 
       // ####### VARIANT_HOVERCAR #######
-      #if defined(VARIANT_HOVERCAR) || defined(VARIANT_SKATEBOARD) || defined(ELECTRIC_BRAKE_ENABLE)
+      #if defined(VARIANT_HOVERCAR) || defined(VARIANT_SKATEBOARD) || defined(ELECTRIC_BRAKE_ENABLE) || defined(VARIANT_CAR)
         uint16_t speedBlend;                                        // Calculate speed Blend, a number between [0, 1] in fixdt(0,16,15)
         speedBlend = (uint16_t)(((CLAMP(speedAvgAbs,10,60) - 10) << 15) / 50); // speedBlend [0,1] is within [10 rpm, 60rpm]
       #endif
@@ -280,24 +277,62 @@ int main(void) {
         standstillHold();                                           // Apply Standstill Hold functionality. Only available and makes sense for VOLTAGE or TORQUE Mode
       #endif
 
-      #ifdef VARIANT_HOVERCAR
+      #if defined(VARIANT_HOVERCAR) || defined(VARIANT_CAR)
       if (inIdx == CONTROL_ADC) {                                   // Only use use implementation below if pedals are in use (ADC input)
-        if (speedAvgAbs < 60) {                                     // Check if Hovercar is physically close to standstill to enable Double tap detection on Brake pedal for Reverse functionality
+        if (speedAvgAbs < 20 && (input2[inIdx].cmd < 10) ) {                                     // Check if Hovercar is physically close to standstill to enable Double tap detection on Brake pedal for Reverse functionality
           multipleTapDet(input1[inIdx].cmd, HAL_GetTick(), &MultipleTapBrake); // Brake pedal in this case is "input1" variable
         }
 
-        if (input1[inIdx].cmd > 30) {                               // If Brake pedal (input1) is pressed, bring to 0 also the Throttle pedal (input2) to avoid "Double pedal" driving
-          input2[inIdx].cmd = (int16_t)((input2[inIdx].cmd * speedBlend) >> 15);
+        if (input1[inIdx].cmd > 100) {                               // If Brake pedal (input1) is pressed, bring to 0 also the Throttle pedal (input2) to avoid "Double pedal" driving
+          //input2[inIdx].cmd = 0;
           cruiseControl((uint8_t)rtP_Left.b_cruiseCtrlEna);         // Cruise control deactivated by Brake pedal if it was active
         }
       }
       #endif
 
+      #ifdef HW_BRAKE_ENABLE
+
+
+      // TIM_BDTR_DTG_Pos = 0
+      // TIM_BDTR_DTG_Msk = 255
+      // TIM_BDTR_DTG = 255
+      // TIM_BDTR_DTG_0 = 1
+      // TIM_BDTR_DTG_1 = 2
+      // TIM_BDTR_DTG_2 = 4
+      // TIM_BDTR_DTG_3 = 8
+      // TIM_BDTR_DTG_4 = 16
+      // TIM_BDTR_DTG_5 = 32
+      // TIM_BDTR_DTG_6 = 64
+      // TIM_BDTR_DTG_7 = 128
+
+      static uint8_t bdtr;
+
+      if (abs(input2[inIdx].cmd) < 10) { // Throttle release
+        bdtr = hwBrake(input1[inIdx].cmd);
+
+      }
+      else { // slowly raise bdtr to prevent shock
+          if (main_loop_counter % 2 == 0 && bdtr > DEAD_TIME) {
+              bdtr--;
+          }
+
+          //bdtr = MAP(CLAMP(abs(input1[inIdx].cmd), 0, 1000), 0, 1000, 0, 255 );
+
+          LEFT_TIM->BDTR &= ~TIM_BDTR_DTG;
+          REGISTER_WRITE(LEFT_TIM->BDTR,TIM_BDTR_DTG_Pos, bdtr );
+
+          RIGHT_TIM->BDTR &= ~TIM_BDTR_DTG;
+          REGISTER_WRITE(RIGHT_TIM->BDTR,TIM_BDTR_DTG_Pos, bdtr );
+      }
+      #endif
+
+
+
       #ifdef ELECTRIC_BRAKE_ENABLE
         electricBrake(speedBlend, MultipleTapBrake.b_multipleTap);  // Apply Electric Brake. Only available and makes sense for TORQUE Mode
       #endif
 
-      #ifdef VARIANT_HOVERCAR
+      #if defined(VARIANT_HOVERCAR) || defined(VARIANT_CAR)
       if (inIdx == CONTROL_ADC) {                                   // Only use use implementation below if pedals are in use (ADC input)
         if (speedAvg > 0) {                                         // Make sure the Brake pedal is opposite to the direction of motion AND it goes to 0 as we reach standstill (to avoid Reverse driving by Brake pedal) 
           input1[inIdx].cmd = (int16_t)((-input1[inIdx].cmd * speedBlend) >> 15);
@@ -316,6 +351,10 @@ int main(void) {
           }
         }
       #endif
+
+      // Exponential command
+      input1[inIdx].cmd = input1[inIdx].cmd*abs(input1[inIdx].cmd)/1000;
+      input2[inIdx].cmd = input2[inIdx].cmd*abs(input2[inIdx].cmd)/1000;
 
       // ####### LOW-PASS FILTER #######
       rateLimiter16(input1[inIdx].cmd, rate, &steerRateFixdt);
@@ -366,38 +405,6 @@ int main(void) {
         pwml = cmdL;
       #endif
     #endif
-
-        if (0 && abs(input2[inIdx].cmd) < 10) { // Throttle release
-          //bdtr = hwBrake(input1[inIdx].cmd);
-          //bdtr = 127; // TODO: fix this, should work with return from line above
-
-        }
-        else { // slowly raise bdtr to prevent shock
-  //          if (main_loop_counter % 5 == 0 && bdtr > 0) {
-  //              beepCount(1, 32, 1);
-
-  //              bdtr--;
-  //          }
-            LEFT_TIM->BDTR &= ~TIM_BDTR_DTG;
-
-            uint8_t bdtr = MAP(CLAMP(abs(input2[inIdx].cmd), 0, 500), 0, 500, 0, 255 );
-
-
-            //BIT_CLEAR(LEFT_TIM->BDTR, TIM_BDTR_BKE);
-            //BIT_SET(LEFT_TIM->BDTR, TIM_BDTR_BKE);
-
-            LEFT_TIM->BDTR &= ~TIM_BDTR_DTG;
-            REGISTER_WRITE(LEFT_TIM->BDTR,TIM_BDTR_DTG_Pos, bdtr );
-
-
-
-
-            //RIGHT_TIM->BDTR &= ~TIM_BDTR_DTG;
-            //RIGHT_TIM->BDTR |= (bdtr<<TIM_BDTR_DTG);
-        }
-
-
-
 
     #ifdef VARIANT_TRANSPOTTER
       distance    = CLAMP(input1[inIdx].cmd - 180, 0, 4095);

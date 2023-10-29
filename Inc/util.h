@@ -84,6 +84,7 @@ void adcCalibLim(void);
 void updateCurSpdLim(void);
 void standstillHold(void);
 void electricBrake(uint16_t speedBlend, uint8_t reverseDir);
+uint8_t hwBrake(int16_t cmd);
 void cruiseControl(uint8_t button);
 int  checkInputType(int16_t min, int16_t mid, int16_t max);
 
