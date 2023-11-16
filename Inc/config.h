@@ -152,9 +152,9 @@
 #define DIAG_ENA        1                // [-] Motor Diagnostics enable flag: 0 = Disabled, 1 = Enabled (default)
 
 // Limitation settings
-#define I_MOT_MAX       6              // [A] Maximum single motor current limit
+#define I_MOT_MAX       10              // [A] Maximum single motor current limit
 #define I_DC_MAX        15              // [A] Maximum stage2 DC Link current limit for Commutation and Sinusoidal types (This is the final current protection. Above this value, current chopping is applied. To avoid this make sure that I_DC_MAX = I_MOT_MAX + 2A)
-#define N_MOT_MAX       120            // [rpm] Maximum motor speed limit
+#define N_MOT_MAX       100            // [rpm] Maximum motor speed limit
 
 // Field Weakening / Phase Advance
 #define FIELD_WEAK_ENA  0               // [-] Field Weakening / Phase Advance enable flag: 0 = Disabled (default), 1 = Enabled
@@ -287,7 +287,7 @@
 
   // #define DUAL_INPUTS                     //  ADC*(Primary) + UART(Auxiliary). Uncomment this to use Dual-inputs
   #define PRI_INPUT1            0, 500, 2000, 4095, 0      // TYPE, MIN, MID, MAX, DEADBAND. See INPUT FORMAT section
-  #define PRI_INPUT2            3, 800, 0, 4095, 1000      // TYPE, MIN, MID, MAX, DEADBAND. See INPUT FORMAT section
+  #define PRI_INPUT2            1, 1200, 0, 4095, 100      // TYPE, MIN, MID, MAX, DEADBAND. See INPUT FORMAT section
   #ifdef DUAL_INPUTS
     #define FLASH_WRITE_KEY     0x1101    // Flash memory writing key. Change this key to ignore the input calibrations from the flash memory and use the ones in config.h
     // #define SIDEBOARD_SERIAL_USART3 1
@@ -299,6 +299,9 @@
     #define FLASH_WRITE_KEY     0x1001F    // Flash memory writing key. Change this key to ignore the input calibrations from the flash memory and use the ones in config.h
     #define DEBUG_SERIAL_USART3           // right sensor board cable, disable if I2C (nunchuk or lcd) is used!
   #endif
+
+#define RATE 50
+#define N_MOT_MAX_REVERSE 20
 
 #define REVERSE_SWITCH
 
@@ -313,7 +316,7 @@
 #endif
 // ############################# END OF VARIANT_ADC SETTINGS #########################
 
-
+#define CONTROL_SERIAL_USART3  1
 
 // ############################ VARIANT_USART SETTINGS ############################
 #ifdef VARIANT_USART

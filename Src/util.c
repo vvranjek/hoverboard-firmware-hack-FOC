@@ -1765,4 +1765,11 @@ void multipleTapDet(int16_t u, uint32_t timeNow, MultipleTap *x) {
   x->t_timePrev 	  = t_time;
 }
 
+void setMaxRPM(const int16_t rpm)
+{
+    rtP_Left.n_max = rtP_Right.n_max = rpm << 4;
 
+//    if (rtP_Left.n_max != rpm << 4 || rtP_Right.n_max != rpm << 4) {
+//        rtP_Left.n_max = rtP_Right.n_max = rpm << 4;
+//    }
+}

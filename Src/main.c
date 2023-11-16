@@ -186,16 +186,26 @@ void set_output(int16_t cmdl, int16_t cmdr)
       //printf("REVERSE\n");
       cmdr = -cmdr;
       cmdl = -cmdl;
+      setMaxRPM(N_MOT_MAX);
+  }
+  else {
+          setMaxRPM(N_MOT_MAX_REVERSE);
   }
 #endif
-
-
-
 
     pwmr = cmdr;
 
     pwml = cmdl;
 }
+
+
+// Set max RPM in reverse
+//if (input2[inIdx].cmd < 0) {
+//    setMaxRPM(25);
+//}
+//else {
+//    setMaxRPM(N_MOT_MAX);
+//}
 
 
 int main(void) {
