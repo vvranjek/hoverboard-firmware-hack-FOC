@@ -69,6 +69,8 @@ extern uint8_t     inIdx;               // input index used for dual-inputs
 extern uint8_t     inIdx_prev;
 extern InputStruct input1[];            // input structure
 extern InputStruct input2[];            // input structure
+InputStruct input1_old[];
+InputStruct input2_old[];
 
 extern int16_t speedAvg;                // Average measured speed
 extern int16_t speedAvgAbs;             // Average measured speed in absolute
@@ -163,6 +165,7 @@ static uint32_t    inactivity_timeout_counter;
 static MultipleTap MultipleTapBrake;    // define multiple tap functionality for the Brake pedal
 
 static uint16_t rate = RATE; // Adjustable rate to support multiple drive modes on startup
+static uint16_t rate_default = DEFAULT_RATE;
 
 #ifdef MULTI_MODE_DRIVE
   static uint8_t drive_mode;
@@ -378,10 +381,53 @@ int main(void) {
       #endif
 
       // ####### LOW-PASS FILTER #######
+
+      #ifdef DUAL_RATES
+      // With dua
+      int16_t range = abs(input1[inIdx].max - input1[inIdx].min);
+      int16_t change = abs(input1[inIdx].cmd - input1_old[inIdx].cmd);
+
+      if (((input1[inIdx].cmd >= 0) && (input1[inIdx].cmd > steer)) ||
+           (input1[inIdx].cmd < 0) && (input1[inIdx].cmd < steer))    {
+      rateLimiter16(input1[inIdx].cmd, rate, &steerRateFixdt);
+           //printf("Low rate 1\n");
+      }
+      else {
+          rateLimiter16(input1[inIdx].cmd, rate + abs(rate-rate_default)*change/range, &steerRateFixdt);
+          //printf("High rate 1: %i\n", rate + abs(rate-rate_default)*change/range);
+      }
+
+
+      if (((input2[inIdx].cmd >= 0) && (input2[inIdx].cmd > speed)) ||
+           (input2[inIdx].cmd < 0) && (input2[inIdx].cmd < speed))    {
+      rateLimiter16(input2[inIdx].cmd, rate, &speedRateFixdt);
+           printf("Low rate 2\n");
+      }
+      else {
+          rateLimiter16(input2[inIdx].cmd, rate_default - abs(rate-rate_default)*change/range, &speedRateFixdt);
+
+          //rateLimiter16(input2[inIdx].cmd, rate_default, &speedRateFixdt);
+          printf("High rate 2: %i\n", rate_default - abs(rate-rate_default)*change/range);
+      }
+
+
+      filtLowPass32(steerRateFixdt >> 4, FILTER, &steerFixdt);
+      filtLowPass32(speedRateFixdt >> 4, FILTER, &speedFixdt);
+
+
+
+      input1_old[inIdx].cmd = input1[inIdx].cmd;
+      input2_old[inIdx].cmd = input2[inIdx].cmd;
+
+      #else
+
       rateLimiter16(input1[inIdx].cmd, rate, &steerRateFixdt);
       rateLimiter16(input2[inIdx].cmd, rate, &speedRateFixdt);
       filtLowPass32(steerRateFixdt >> 4, FILTER, &steerFixdt);
       filtLowPass32(speedRateFixdt >> 4, FILTER, &speedFixdt);
+
+      #endif
+
       steer = (int16_t)(steerFixdt >> 16);  // convert fixed-point to integer
       speed = (int16_t)(speedFixdt >> 16);  // convert fixed-point to integer
 

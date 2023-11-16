@@ -301,6 +301,7 @@
   #endif
 
 #define RATE 50
+#define DUAL_RATES                    // RATE is applied only when change is positive in a positive direction and vice versa. Example: slow acceleration but fast deccaleration
 #define N_MOT_MAX_REVERSE 20
 
 #define REVERSE_SWITCH
