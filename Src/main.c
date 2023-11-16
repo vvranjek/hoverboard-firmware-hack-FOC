@@ -182,14 +182,39 @@ void set_output(int16_t cmdl, int16_t cmdr)
   #endif
 
 #ifdef REVERSE_SWITCH
+//  if (input1[inIdx].raw > input1[inIdx].mid + input1[inIdx].dband) {
+//      //printf("REVERSE\n");
+//      cmdr = -cmdr;
+//      cmdl = -cmdl;
+//      setMaxRPM(N_MOT_MAX);
+//  }
+//  else {
+//      setMaxRPM(N_MOT_MAX_REVERSE);
+//  }
+
+
   if (input1[inIdx].raw > input1[inIdx].mid + input1[inIdx].dband) {
+
+      setMaxRPM(N_MOT_MAX_REVERSE);
+  }
+  else if (input1[inIdx].raw < input1[inIdx].mid - input1[inIdx].dband) {
       //printf("REVERSE\n");
       cmdr = -cmdr;
       cmdl = -cmdl;
       setMaxRPM(N_MOT_MAX);
+
   }
+
   else {
-          setMaxRPM(N_MOT_MAX_REVERSE);
+      cmdr = 0;
+      cmdl = 0;
+      steer = 0;
+      speed = 0;
+
+      steerRateFixdt = 0;
+      steerFixdt = 0;
+      speedRateFixdt = 0;
+      speedFixdt = 0;
   }
 #endif
 
