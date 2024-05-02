@@ -322,6 +322,10 @@ int main(void) {
       steer = (int16_t)(steerFixdt >> 16);  // convert fixed-point to integer
       speed = (int16_t)(speedFixdt >> 16);  // convert fixed-point to integer
 
+      #ifdef DINAMIC_SPEED_LIMIT
+      rtP_Right.n_max = rtP_Left.n_max = ABS(input2[inIdx].cmd)*N_MOT_MAX/100;
+      #endif
+
       // ####### VARIANT_HOVERCAR #######
       #ifdef VARIANT_HOVERCAR
       if (inIdx == CONTROL_ADC) {               // Only use use implementation below if pedals are in use (ADC input)
