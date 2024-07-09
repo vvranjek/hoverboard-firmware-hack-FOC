@@ -198,17 +198,34 @@ void set_output(int16_t cmdl, int16_t cmdr)
 
   if (input1[inIdx].raw > input1[inIdx].mid + input1[inIdx].dband) {
 
+      int max_current = MAP(ABS(input2[inIdx].cmd), 0, 1000, I_MOT_MAX/10, I_MOT_MAX);
+      rtP_Left.i_max = (max_current * A2BIT_CONV) << 4;
+      rtP_Right.i_max = (max_current * A2BIT_CONV) << 4;
+
+
+      ctrlModReqRaw = CTRL_TYP_SEL;
+      rtP_Left.z_ctrlTypSel  = CTRL_TYP_SEL;
+      rtP_Right.z_ctrlTypSel  = CTRL_TYP_SEL;
       setMaxRPM(N_MOT_MAX_REVERSE);
   }
   else if (input1[inIdx].raw < input1[inIdx].mid - input1[inIdx].dband) {
       //printf("REVERSE\n");
+      rtP_Left.i_max = (I_MOT_MAX * A2BIT_CONV) << 4;
+      rtP_Right.i_max = (I_MOT_MAX * A2BIT_CONV) << 4;
+
+      ctrlModReqRaw = CTRL_TYP_SEL;
+      rtP_Left.z_ctrlTypSel  = CTRL_TYP_SEL;
+      rtP_Right.z_ctrlTypSel  = CTRL_TYP_SEL;
       cmdr = -cmdr;
       cmdl = -cmdl;
       setMaxRPM(N_MOT_MAX);
-
   }
 
+  // Neutral
   else {
+      ctrlModReqRaw = OPEN_MODE;
+      rtP_Left.z_ctrlTypSel = OPEN_MODE;
+      rtP_Right.z_ctrlTypSel = OPEN_MODE;
       cmdr = 0;
       cmdl = 0;
       steer = 0;
@@ -222,7 +239,6 @@ void set_output(int16_t cmdl, int16_t cmdr)
 #endif
 
     pwmr = cmdr;
-
     pwml = cmdl;
 }
 
